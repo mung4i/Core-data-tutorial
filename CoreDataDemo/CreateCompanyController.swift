@@ -9,26 +9,50 @@
 import UIKit
 import CoreData
 
-protocol CreateCompanyControllerDelegate {
+protocol CompanyControllerDelegate {
     
+    func didEditCompany(company: Company)
     func didSaveCompany()
 }
 
 class CreateCompanyController: UIViewController {
     
+    var delegate: CompanyControllerDelegate?
+    
+    var company: Company? {
+        
+        didSet {
+            self.nameTextField.text = company?.name
+            
+            guard let founded = company?.founded
+                else { return }
+            datePicker.date = founded
+        }
+    }
+    
     //
     // MARK: Constants
     //
     
-    let lightBlueBackgroundView: UIView = {
+    let context = CoreDataManager.shared.persistentContainer.viewContext
+    
+    let datePicker: UIDatePicker = {
         
-        let lightBlueBackgroundView = UIView()
-        lightBlueBackgroundView.backgroundColor = .lightBlue
+        let datePicker = UIDatePicker()
+        datePicker.datePickerMode = .date
+        datePicker.translatesAutoresizingMaskIntoConstraints = false
+        return datePicker
+    }()
+    
+    let backgroundView: UIView = {
+        
+        let backgroundView = UIView()
+        backgroundView.backgroundColor = .lightBlue
         
         // enable Autolayout
-        lightBlueBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
         
-        return lightBlueBackgroundView
+        return backgroundView
     }()
     
     let nameLabel: UILabel = {
@@ -48,11 +72,16 @@ class CreateCompanyController: UIViewController {
     }()
     
     override func viewDidLoad() {
+        
         super.viewDidLoad()
         setupNavigationItems()
-        view.backgroundColor = .darkBlue
-        
         setupUI()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        super.viewWillAppear(animated)
+        navigationItem.title = company == nil ? "Create Company" : "Edit Company"
     }
     
     //
@@ -66,22 +95,44 @@ class CreateCompanyController: UIViewController {
     
     @objc
     private func handleSave() {
-        print("Trying to save button...")
+        if company == nil {
+            createCompany()
+        } else {
+            saveCompanyChanges()
+        }
+    }
+    
+    private func createCompany() {
         
-        dismiss(animated: true) {
+        guard let name = self.nameTextField.text else { return }
+        
+        let company = NSEntityDescription.insertNewObject(forEntityName: "Company", into: context)
+        company.setValue(name, forKey: "name")
+        company.setValue(datePicker.date, forKey: "founded")
+        
+        do {
+            try context.save()
+            dismiss(animated: true, completion: {
+                self.delegate?.didSaveCompany()
+            })
             
-            guard let name = self.nameTextField.text else { return }
-            
-            let context = CoreDataManager.shared.persistentContainer.viewContext
-            
-            let company = NSEntityDescription.insertNewObject(forEntityName: "Company", into: context)
-            company.setValue(name, forKey: "name")
-            
-            do {
-                try context.save()
-            } catch let saveError {
-                fatalError("Failed to save company: \(saveError)")
-            }
+        } catch let saveError {
+            fatalError("Failed to save company: \(saveError)")
+        }
+    }
+    
+    private func saveCompanyChanges() {
+        
+        company?.name = nameTextField.text
+        company?.founded = datePicker.date
+        
+        do {
+            try context.save()
+            dismiss(animated: true, completion: {
+                self.delegate?.didEditCompany(company: self.company!)
+            })
+        } catch let saveError {
+            fatalError("Failed to save company changes: \(saveError)")
         }
     }
     
@@ -92,14 +143,16 @@ class CreateCompanyController: UIViewController {
     }
     
     private func setupUI() {
+        
+        view.backgroundColor = .darkBlue
         // BackgroundView
         
-        view.addSubview(lightBlueBackgroundView)
+        view.addSubview(backgroundView)
         
-        lightBlueBackgroundView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-        lightBlueBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        lightBlueBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        lightBlueBackgroundView.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        backgroundView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        backgroundView.heightAnchor.constraint(equalToConstant: 250).isActive = true
         
         // Label
         
@@ -117,5 +170,13 @@ class CreateCompanyController: UIViewController {
         nameTextField.leftAnchor.constraint(equalTo: nameLabel.rightAnchor).isActive = true
         nameTextField.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         nameTextField.bottomAnchor.constraint(equalTo: nameLabel.bottomAnchor).isActive = true
+        
+        // Datepicker
+        
+        view.addSubview(datePicker)
+        datePicker.topAnchor.constraint(equalTo: nameLabel.bottomAnchor).isActive = true
+        datePicker.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+        datePicker.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+        datePicker.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor).isActive = true
     }
 }
