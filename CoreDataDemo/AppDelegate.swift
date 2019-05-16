@@ -14,9 +14,16 @@ class AppDelegate: UIResponder {
     var window: UIWindow?
 }
 
-class CustomNavigationController :UINavigationController {
+class CustomNavigationController: UINavigationController {
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
+}
+
+extension UINavigationController {
+    
+    open override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
 }

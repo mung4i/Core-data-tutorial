@@ -78,6 +78,14 @@ class CompaniesController: UITableViewController {
         let date = dateFormatter.string(from: company.founded ?? Date())
         
         cell.textLabel?.text = "\(name) - Founded: \(date)"
+        
+        cell.imageView?.clipsToBounds = true
+        cell.imageView?.contentMode = .scaleAspectFill
+        cell.imageView?.image = UIImage(named: "default_profile")
+        
+        if let imageData = company.imageData {
+            cell.imageView?.image = UIImage(data: imageData)
+        }
        
         return cell
     }

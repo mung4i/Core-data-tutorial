@@ -69,12 +69,12 @@
 				5B66B79D228C1C02001D605B /* Assets.xcassets */,
 				5B66B7A2228C1C02001D605B /* Info.plist */,
 				5B66B7AA228C3CBF001D605B /* Company.swift */,
+				5B66B7B1228C5446001D605B /* CoreDataManager.swift */,
 				5B66B7A8228C39BE001D605B /* UIColor+theme.swift */,
 				5B66B796228C1C01001D605B /* AppDelegate.swift */,
 				5B66B7AC228C3F9F001D605B /* CreateCompanyController.swift */,
 				5B66B798228C1C01001D605B /* CompaniesController.swift */,
 				5B66B7AE228C4CAB001D605B /* CompaniesModel.xcdatamodeld */,
-				5B66B7B1228C5446001D605B /* CoreDataManager.swift */,
 			);
 			path = CoreDataDemo;
 			sourceTree = "<group>";
