@@ -16,6 +16,7 @@ class CompaniesController: UITableViewController {
     //
     
     let CellReuseIdentifier = "cellId"
+    let Context = CoreDataManager.shared.persistentContainer.viewContext
     
     //
     // MARK: Properties
@@ -27,11 +28,9 @@ class CompaniesController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         setupNavigationItems()
         setupTableView()
-        
-        self.fetchCompanies()
+        fetchCompanies()
     }
     
     //
@@ -57,6 +56,21 @@ class CompaniesController: UITableViewController {
         let view = UIView()
         view.backgroundColor = .lightBlue
         return view
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return companies.count == 0 ? 150 : 0
+    }
+    
+    override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        
+        let label = UILabel()
+        label.text = "No companies available..."
+        label.textColor = .white
+        label.textAlignment = .center
+        label.font = UIFont.boldSystemFont(ofSize: 16)
+        
+        return label
     }
     
     //
@@ -106,11 +120,10 @@ class CompaniesController: UITableViewController {
         self.companies.remove(at: indexPath.row)
         self.tableView.deleteRows(at: [indexPath], with: .automatic)
         
-        let context = CoreDataManager.shared.persistentContainer.viewContext
-        context.delete(company)
+        Context.delete(company)
         
         do {
-            try context.save()
+            try Context.save()
         } catch let saveError {
             print("Failed to delete company.", company.name ?? "", saveError)
         }
@@ -128,11 +141,10 @@ class CompaniesController: UITableViewController {
     
     private func fetchCompanies() {
         
-        let context = CoreDataManager.shared.persistentContainer.viewContext
         let fetchRequest = NSFetchRequest<Company>(entityName: "Company")
         
         do {
-            let companies = try context.fetch(fetchRequest)
+            let companies = try Context.fetch(fetchRequest)
             self.companies = companies
         }
         catch let fetchError {
@@ -146,8 +158,32 @@ class CompaniesController: UITableViewController {
         
         let createCompanyController = CreateCompanyController()
         createCompanyController.delegate = self
+        
         let navigationController = CustomNavigationController(rootViewController: createCompanyController)
         present(navigationController, animated: true)
+    }
+    
+    @objc private func handleReset() {
+        
+        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: Company.fetchRequest())
+        
+        do {
+            try Context.execute(batchDeleteRequest)
+            
+            var indexPathsToRemove = [IndexPath]()
+            
+            for (index, _) in companies.enumerated() {
+                let indexPath = IndexPath(row: index, section: 0)
+                indexPathsToRemove.append(indexPath)
+            }
+            
+            companies.removeAll()
+            tableView.deleteRows(at: indexPathsToRemove, with: .left)
+        }
+        
+        catch let deleteError {
+            fatalError("Failed to delete objects from Core Data: \(deleteError)")
+        }
     }
     
     private func reloadTableView() {
@@ -156,8 +192,14 @@ class CompaniesController: UITableViewController {
     
     private func setupNavigationItems() {
         
-        let add = UIImage(named: "add")?.withRenderingMode(.alwaysOriginal)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: add, style: .plain, target: self, action: #selector(handleAddCompany))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Reset", style: .plain, target: self, action: #selector(handleReset))
+        
+        let add = UIImage(named: "custom_button")?.withRenderingMode(.alwaysOriginal)
+        
+        let button = UIBarButtonItem(image: add, style: .plain, target: self, action: #selector(handleAddCompany))
+        button.imageInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
+        navigationItem.rightBarButtonItem = button
+        
         navigationItem.title = "Companies"
     }
     
