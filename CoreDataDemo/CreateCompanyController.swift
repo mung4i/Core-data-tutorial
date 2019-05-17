@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-protocol CompanyControllerDelegate {
+protocol CreateCompanyControllerDelegate {
     
     func didEditCompany(company: Company)
     func didSaveCompany()
@@ -17,11 +17,12 @@ protocol CompanyControllerDelegate {
 
 class CreateCompanyController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
-    var delegate: CompanyControllerDelegate?
+    var delegate: CreateCompanyControllerDelegate?
     
     var company: Company? {
         
         didSet {
+            
             self.nameTextField.text = company?.name
             
             if let imageData = company?.imageData {
@@ -37,8 +38,6 @@ class CreateCompanyController: UIViewController, UIImagePickerControllerDelegate
     //
     // MARK: Constants
     //
-    
-    let context = CoreDataManager.shared.persistentContainer.viewContext
     
     let datePicker: UIDatePicker = {
         
@@ -150,6 +149,7 @@ class CreateCompanyController: UIViewController, UIImagePickerControllerDelegate
         
         guard let name = self.nameTextField.text else { return }
         
+        let context = CoreDataManager.shared.persistentContainer.viewContext
         let company = NSEntityDescription.insertNewObject(forEntityName: "Company", into: context)
         company.setValue(name, forKey: "name")
         company.setValue(datePicker.date, forKey: "founded")
@@ -177,6 +177,8 @@ class CreateCompanyController: UIViewController, UIImagePickerControllerDelegate
         company?.founded = datePicker.date
         company?.imageData = imageView.image?.jpegData(compressionQuality: 0.8)
         
+        let context = CoreDataManager.shared.persistentContainer.viewContext
+        
         do {
             try context.save()
             dismiss(animated: true, completion: {
@@ -188,6 +190,8 @@ class CreateCompanyController: UIViewController, UIImagePickerControllerDelegate
     }
     
     private func setupCircularImageStyle() {
+        
+        imageView.layoutIfNeeded()
         
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = imageView.frame.width / 2
@@ -220,6 +224,8 @@ class CreateCompanyController: UIViewController, UIImagePickerControllerDelegate
         imageView.heightAnchor.constraint(equalToConstant: 100).isActive = true
         imageView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: 16).isActive = true
         imageView.widthAnchor.constraint(equalToConstant: 100).isActive = true
+        
+        setupCircularImageStyle()
         
         // Label
         
